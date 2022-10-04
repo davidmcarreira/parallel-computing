@@ -7,7 +7,7 @@ import time
 start = time.time() #Samples clock (returns time since epoch) at this time
 start_cpu = time.process_time() #Samples clock (system and CPU usage time) at this time
 
-events = int(10e6) #number of events
+events = int(10e2) #number of events
 sides = 6 #number of sides per dice
 n_dice = 2 #number of dices
 

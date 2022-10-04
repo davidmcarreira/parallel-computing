@@ -13,7 +13,7 @@ size = comm.Get_size() #Number of processes
 start = time.time() #Samples clock (returns time since epoch) at this time
 start_cpu = time.process_time() #Samples clock (system and CPU usage time) at this time
 
-events = int(10e6)//size #Number of events divided by the number of processes
+events = int(16)//size #Number of events divided by the number of processes
 sides = 6 #Number of sides per dice
 n_dice = 2 #Number of dices
 
