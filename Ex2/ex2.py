@@ -96,7 +96,7 @@ are commented. Therefore, without graphics, the results are as follows:
 - The approximate value of pi is 3.141503 and the real value is 3.141592, the delta_r is 0.000164 and the delta_pi is 0.000089 
 for a critical value Z_c of 1. 
 
-- For 100000000 events the execution time is 106.49144983291626 seconds and the CPU execution time is 103.981949305 seconds. This means that
+- For 10^8 events the execution time is 106.49144983291626 seconds and the CPU execution time is 103.981949305 seconds. This means that
 there is a reduction of exectuion time of,approximately, 69 seconds, resulting in an improvemnt of 60.8% when compared to single core performace!
 
 Note: This is basically the same percentage as the "Dice Rolling" task.
