@@ -15,7 +15,7 @@ rank = comm.Get_rank() #Hierarchy of processes
 size = comm.Get_size() #Number of processes
 
 n = int(sys.argv[1])  #Number of points divided by the number of processes
-npp = n / size
+npp = n / size #Number of points per process
 
 pi_real = 3.141592
 x = [] #List with the x coordinates of the random points
@@ -36,11 +36,13 @@ while i<npp: #Cycle to fill 2 lists of the random numbers' coordinates
     i += 1 #Increases the cycle index
 
 for j in range(0, len(x)): #for loop to check if a point is inside the circle
-    pc = pow(x[j], 2) + pow(y[j], 2)
-    if pc <= pow(r, 2):
+    pc = pow(x[j], 2) + pow(y[j], 2) #Circle parametrization
+    if pc <= pow(r, 2): #Condition to be inside the circle
         count['inside'] += 1 #Increases the corresponding dictionary key for a point inside the circle
+        #plt.scatter(x[j], y[j], c = 'orange') #Plot of the random points
     else:
-        count['out'] += 1 #Increases the corresponding dictionary key for a point outside the circle 
+        count['out'] += 1 #Increases the corresponding dictionary key for a point outside the circle
+        #plt.scatter(x[j], y[j], c = 'blue')
 
 
 #-------------------- Parallelization portion of the code --------------------#
@@ -61,12 +63,20 @@ if rank == 0:
     print ("There are {} points inside and {} outside.".format(count['inside'], count['out']))
     print("\nThe approximate value of pi is {:.6f}, the delta_r is {:.6f} and the delta_pi is {:.6f} for a critical value Z_c of {}.".format(pi, delta_r, delta_pi, z_c))
 
+    #circle1 = plt.Circle((0, 0), r, color='pink', fill=False) #matplotlib functionally to draw a circle with center
+                                                       #at (0,0) and radius 1
+
+    #plt.gca().add_patch(circle1) #Drawing the circle (patch) in the plot at the current axis configuration
+                                  #gca() => Get Current Axis
+
     end = time.time() #Samples clock again
     end_cpu = time.process_time() #same thing bit for system and CPU
     et = end - start #Calculates the difference between time samples (epoch related)
     et_cpu = end_cpu - start_cpu #Calculates the difference but for the time spent on system and CPU
 
     print("\nFor {} events the execution time is {} seconds and the CPU execution time is {} seconds".format(n, et, et_cpu))
+
+    #plt.show() #Shows the plot after everything intended is included in the figure
 else:
     #Communicators responsible for sending the generated/calculated data to the "master" process (rank 0)
     comm.send(x, dest = 0, tag = 1)

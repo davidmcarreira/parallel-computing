@@ -25,13 +25,13 @@ while i<n: #Cycle to fill 2 lists of the random numbers' coordinates
     x.append(x_temp) #Appends the float to the x list
 
     y_temp = random.uniform(-1, 1)
-    y.append(y_temp) #Appends the float to the x list
+    y.append(y_temp) #Appends the float to the y list
 
     i += 1 #Increases the cycle index
 
 for j in range(0, len(x)):
-    pc = pow(x[j], 2) + pow(y[j], 2)
-    if pc <= pow(r, 2):
+    pc = pow(x[j], 2) + pow(y[j], 2) #Circle parametrization
+    if pc <= pow(r, 2): #Condition to be inside the circle
         count['inside'] += 1 #Increases the corresponding dictionary key for a point inside the circle
         #plt.scatter(x[j], y[j], c = 'orange') #Plot of the random points
     else:
@@ -39,8 +39,6 @@ for j in range(0, len(x)):
         #plt.scatter(x[j], y[j], c = 'blue')
 
 print ("There are {} points inside and {} outside.".format(count['inside'], count['out']))
-#circle1 = plt.Circle((0, 0), r, color='pink', fill=False) #matplotlib functionally to draw a circle with center
-                                                       #at (0,0) and radius 1
 
 z_c = 1 #Critical value
 pi = 4*(count['inside'] / n) #pi approximation formula
@@ -48,6 +46,8 @@ delta_r = 4*z_c*sqrt((count['inside'] / n)*(1-(count['inside'] / n))/n) #Estimat
 delta_pi = abs(pi_real-pi) #Error
 print("\nThe approximate value of pi is {:.6f}, the delta_r is {:.6f} and the delta_pi is {:.6f} for a critical value Z_c of {}.".format(pi, delta_r, delta_pi, z_c))
 
+#circle1 = plt.Circle((0, 0), r, color='pink', fill=False) #matplotlib functionally to draw a circle with center
+                                                       #at (0,0) and radius 1
 #plt.gca().add_patch(circle1) #Drawing the circle (patch) in the plot at the current axis configuration
                              #gca() => Get Current Axis
 
