@@ -10,10 +10,14 @@ comm = MPI.COMM_WORLD #Communicator to handle point-to-point communication
 rank = comm.Get_rank() #Hierarchy of processes
 size = comm.Get_size() #Number of processes
 
+
 start = time.time() #Samples clock (returns time since epoch) at this time
 start_cpu = time.process_time() #Samples clock (system and CPU usage time) at this time
 
-events = int(16)//size #Number of events divided by the number of processes
+#comm.Barrier() #Process synchronization
+mytime = MPI.Wtime()
+
+events = int(12)//size #Number of events divided by the number of processes
 sides = 6 #Number of sides per dice
 n_dice = 2 #Number of dices
 
@@ -50,9 +54,10 @@ if rank == 0:
     end_cpu = time.process_time() #same thing bit for system and CPU
     et = end - start #Calculates the difference between time samples (epoch related)
     et_cpu = end_cpu - start_cpu #Calculates the difference but for the time spent on system and CPU
-    print("For {} events the execution time is {} seconds and the CPU execution time is {} seconds".format(events*size, et, et_cpu))
+    
+    print("For {} events the execution time is {} seconds and the CPU execution time is {} seconds and {}".format(events*size, et, et_cpu, mytime))
 
-    plt.show()
+    #plt.show()
 else:
     comm.send(D, dest = 0) #Sends data to rank 0 process
 
@@ -65,3 +70,6 @@ else:
     the time by 60%.
     
     """
+
+mytime = MPI.Wtime() - mytime
+print("Elapsed time test", mytime)
