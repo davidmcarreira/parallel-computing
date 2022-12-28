@@ -1,22 +1,24 @@
 from mpi4py import MPI
 import numpy as np
 from cmath import sqrt
+import sys
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
-n = 16
+n = int(sys.argv[1])
 lpp = int(n/sqrt(size).real)
 np.set_printoptions(linewidth=200)
 
 if rank == 0:
     firstIter = True
-    arr1 = np.linspace(1, n**2, n**2, dtype=int).reshape((n,n))
-    arr2 = np.transpose(np.linspace(10, 10*n**2, n**2, dtype=int).reshape((n, n))).copy()
-
-    sub_arr1 = np.split(arr1, int(n/lpp), axis = 0) #n/lpp lines per process
-    sub_arr2 = np.split(arr2, int(n/lpp), axis = 0) #n/lpp columns per process
+    #arr1 = np.linspace(1, n**2, n**2, dtype=int).reshape((n,n))
+    #arr2 = np.transpose(np.linspace(10, 10*n**2, n**2, dtype=int).reshape((n, n))).copy()
+    arr1 = np.random.randint(1000, size = (n, n), dtype = 'int') #Matrix of random integers
+    arr2 = np.transpose(np.random.randint(1000, size = (n, n), dtype = 'int')).copy()
+    sub_arr1 = np.split(arr1, int(n/lpp), axis = 0) #Spliting the matrix 1 in n/lpp lines per process
+    sub_arr2 = np.split(arr2, int(n/lpp), axis = 0) #Spliting the matrix 2 inn/lpp columns per process
 
     print(sub_arr1)
     print(sub_arr2)
@@ -25,6 +27,7 @@ if rank == 0:
 
     sendbuf = np.empty([lpp, 2*n], dtype='int')
     
+    #First iteration of merging the 2 matrix together
     for i in sub_arr1:
         for j in sub_arr2:
             if firstIter:
@@ -49,7 +52,6 @@ comm.Scatter(sendbuf, recvbuf,  root=0)
 print("\n Rank {} received \n{} {}".format(rank, recvbuf, recvbuf.shape))
 
 #=============================================== Matrix must be divided along the 0 axis and multiplied by the correspondent portion =========================================
-# Review the matrix A scatter, it looks like it's not needed to copy it for each lpp
 mul_lpp = np.split(recvbuf, 2, axis = 1)
 print("\n Rank {} will multiply the following portions \nA:\n{} \nB:\n{}".format(rank, mul_lpp[0], np.transpose(mul_lpp[1]), mul_lpp[0].shape))
 
@@ -86,7 +88,6 @@ if rank == 0:
             rebuilt_C = layer #First layer of the final matrix is created
 
         else:
-            print("THIS IS K {} and process {}: ".format(k, process))
             while layer.shape[1] < n:
                 chunk = np.asarray(mulbuf[k:k+lpp])
                 if (k%n) == 0:
@@ -129,6 +130,3 @@ if rank==0:
             print("\n====> The result and debug matrix are the same, therefore, the multiplication is correct!")
 
     print("\n" + "="*60 + " Exercise 6.2 (Parallelized Execution) " + "="*61)
-    
-
-

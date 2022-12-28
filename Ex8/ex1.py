@@ -10,19 +10,19 @@ rank = comm.Get_rank()
 np.set_printoptions(linewidth=200)
 
 input = argv[1]
-if input != "True":
+if input != "True": #Ranksort mode
     input = int(argv[1])
-else:
+else: #Activates debug mode if sys.argv[1] == "True"
     input = bool(argv[1])
 
 if rank == 0:
-    if input == True: #
+    if input == True: #Debug mode (with duplicates)
         unsorted_arr = np.asarray(np.hstack([np.arange(1, 5, 1), np.arange(4, 16, 1), np.arange(4, 24, 1)])/10, dtype='float') # For debug purposes (duplicates and other possible problems)
-    else:
+    else: #Ranksort mode
         n = input
         unsorted_arr = np.random.rand(n) # Generates a random number array (unsorted)
 
-    unsorted_arr = np.asarray(list(set(unsorted_arr)), dtype='float')
+    unsorted_arr = np.asarray(list(set(unsorted_arr)), dtype='float') #Removes the duplicates if present
     print("Unsorted array without duplicates: ", unsorted_arr, unsorted_arr.shape)
 
     n_values = len(unsorted_arr) #Size of the array after the duplicates are removed (used to initiate the buffers and loops)
@@ -62,7 +62,7 @@ else:
 comm.Bcast(unsorted_arr, root = 0) # The unsorted array is Broadcasted to all processes 
 #if rank == 0: print("The broadcasted unsorted data is: \n{} {}".format(unsorted_arr, unsorted_arr.shape))
 
-vpp = comm.recv(source=0, tag = 1)
+vpp = comm.recv(source=0, tag = 1) #Values per process
 print("The array at rank {} will have size {}".format(rank, vpp))
 recvbuf = np.empty(vpp, dtype = 'float') # Buffer to receive all the values Scattered from the master to each process
 comm.Scatterv([unsorted_arr, recvbuf_size, displ, MPI.DOUBLE], recvbuf, root = 0) # Using Scatterv because the recvbuf arrays will have different sizes
@@ -81,7 +81,7 @@ for i in range(vpp):
     r_chunk[i] = idx  # And the index is stored in the rank array
 
 
-comm.Gatherv(r_chunk, [r, recvbuf_size, displ, MPI.DOUBLE], root = 0)
+comm.Gatherv(r_chunk, [r, recvbuf_size, displ, MPI.DOUBLE], root = 0) # Opposite of Scatterv
 if rank == 0:
     #print(r, r.shape)
     sorted_arr = np.empty(n_values, dtype='float') # Generates empty array to store the sorted values

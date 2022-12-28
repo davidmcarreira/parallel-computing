@@ -9,7 +9,7 @@ start_cpu = time.process_time() #Samples clock (system and CPU usage time) at th
 r = 1 #Radius
 pi_real = 3.141592
 
-grid = 1008 #grid dimension
+grid = 9999 #grid dimension
 step = 2/grid #dimension of each grid box
 
 n = grid + 1 #grid + 1 is the number of points to build each side of the grid
@@ -51,3 +51,15 @@ et = end - start #Calculates the difference between time samples (epoch related)
 et_cpu = end_cpu - start_cpu #Calculates the difference but for the time spent on system and CPU
 
 print("\nThe execution time is {} seconds and the CPU execution time is {} seconds".format( et, et_cpu))
+
+"""
+
+- For 10^8 points there are 78523860 inside and 21496141 outside.
+
+- The approximate value of pi is 3.140954 (3.141570 for Monte Carlo) and the real value is 3.141592, the delta_r is 0.000164 and the delta_pi is 0.000022 
+for a critical value Z_c of 1 (0.000164 and 0.000022, respectively, for Monte Carlo). 
+
+- For 10^8 events the execution time is 105.14008045196533 seconds and the CPU execution time is 105.116733126 seconds (162.12418794631958 seconds 
+and 162.052474583 seconds, respectively, for Monte Carlo), ~35% less runtime needed.
+
+"""

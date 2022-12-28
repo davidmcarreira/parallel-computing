@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 start = time.time() #Samples clock (returns time since epoch) at this time
 start_cpu = time.process_time() #Samples clock (system and CPU usage time) at this time
 
-n = int(sys.argv[1]) #Number of points
+n = 100000000 #Number of points
 
 pi_real = 3.141592
 x = [] #List with the x coordinates of the random points
@@ -70,5 +70,5 @@ are commented. Therefore, without graphics, the results are as follows:
 - The approximate value of pi is 3.141570 and the real value is 3.141592, the delta_r is 0.000164 and the delta_pi is 0.000022 
 for a critical value Z_c of 1. 
 
-- For 10^8 events the execution time is 175.12400078773499 seconds and the CPU execution time is 174.423741705 seconds
+- For 10^8 events the execution time is 162.12418794631958 seconds and the CPU execution time is 162.052474583 seconds
 """

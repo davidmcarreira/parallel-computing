@@ -1,17 +1,14 @@
 from mpi4py import MPI
 from cmath import sqrt
 import numpy as np
-
-
-# start = time.time() #Samples clock (returns time since epoch) at this time
-# start_cpu = time.process_time() #Samples clock (system and CPU usage time) at this time
+import sys
 
 comm = MPI.COMM_WORLD #Communicator to handle point-to-point communication
-start = MPI.Wtime()
+start = MPI.Wtime() #MPI Wall time
 rank = comm.Get_rank() #Hierarchy of processes
 size = comm.Get_size() #Number of processes
 
-grid = 10008 #grid dimension
+grid = int(sys.argv[1]) #grid dimension
 n = grid #grid + 1 is the number of points to build each side of the grid, but because of discretisation of real numbers in a grid
          #we must omit one of the extreme points in order to prevent overlaping of the border points in the grid between processes
 gpp = grid/size #grid boxes per process
@@ -29,7 +26,7 @@ for j in np.arange(step/2+rank*gpp*step, (rank*gpp*step)+gpp*step, step):
 count = dict(inside = 0, out = 0) #Dictionary to help count the points 
                                   #inside the circle and outside the circle
 
-total_time = 0
+max_time = [] #Metadata list to store the time in each process
 
 for j in range(0, len(x)):
     for k in range(0, len(y)):
@@ -48,7 +45,7 @@ if rank == 0:
         count['out'] += count_proc['out'] #Adds the new values to the dictionary key that counts the points outside the circle
 
         process_time = comm.recv(source = p, tag = 1)
-        total_time += process_time
+        max_time.append(process_time)
     print ("For {} points there are {} inside and {} outside.".format(pow(n, 2),count['inside'], count['out']))
 
 
@@ -59,16 +56,11 @@ if rank == 0:
 
     print("\nThe approximate value of pi is {:.6f}, the delta_r is {:.6f} and the delta_pi is {:.6f} for a critical value Z_c of {}.".format(pi, delta_r.real, delta_pi, z_c))
 
-    #end2 = time.time() #Samples clock again
-    #end_cpu = time.process_time() #same thing bit for system and CPU
-    #et2 = end2 - start #Calculates the difference between time samples (epoch related)
-    #et_cpu = end_cpu - start_cpu #Calculates the difference but for the time spent on system and CPU
-    #print("\nFor {} points the execution time is {} seconds and the CPU execution time is {} seconds".format(pow(n, 2), et, et_cpu))
-
     end_master = MPI.Wtime()
     et_master = end_master - start
+    max_time.append(et_master)
     print("Process {} took {} seconds.".format(rank, et_master))
-    print("The total time is {} seconds.".format(total_time))
+    print("The max time is {} seconds.".format(max(i for i in max_time))) #The elapsed time is equal to the maximum time elapsed on a process
 else:
     #Communicators responsible for sending the generated/calculated data to the "master" process (rank 0)
     comm.send(count, dest = 0, tag = 0)
@@ -80,3 +72,20 @@ else:
 
 comm.Barrier() #Guarantees that all the processes are synchronized at this step so the following print is last in order
 if rank==0:print("="*50 + " Exercise 3.4 (Parallelized Execution) for a %dx%d grid "%(grid, grid ) + "="*50)
+
+"""
+
+- For 10^8 points there are there are 78539847 inside and 0 outside (obviously).
+
+- The approximate value of pi is 3.141594 (same as the previous exercise) and the real value is 3.141592, the delta_r is 0.000164 and the delta_pi is 0.000002 
+for a critical value Z_c of 1 (same as the previous exercise as well). 
+
+- For 10^8 events the execution time is 58.824976959 seconds (basically the same as the previous one) but each thread has a different execution time:
+    - Process 0 took 58.824976959 seconds.
+    - Process 1 took 49.331580817 seconds.
+    - Process 2 took 37.493568089 seconds.
+    - Process 3 took 23.094166943 seconds.
+
+=> As expected, due to the symmetry of the system and because only the points inside the circle count, the results are the same!
+
+"""

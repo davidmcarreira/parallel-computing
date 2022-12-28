@@ -23,7 +23,7 @@ sides = 6 #Number of sides per dice
 n_dice = 2 #Number of dices
 
 comm = MPI.COMM_WORLD #Communicator to handle point-to-point communication
-start = MPI.Wtime()
+start = MPI.Wtime() #MPI Wall time
 rank = comm.Get_rank() #Hierarchy of processes
 size = comm.Get_size() #Number of processes
 
@@ -35,12 +35,11 @@ if rank == 0:
     AUX = dict.fromkeys(seq, 0)
     wtime = []
 
-    for p in range(1, size):
+    for p in range(1, size): #Sending to each process the number of points
         #print("Run order sent to process ", p)
         comm.send(npp, dest = p, tag=11)
     
     while True:
-
         D = simulation(npp, sides, n_dice)
         #print("Process", rank, "has the following results: ", D)
         #print(D)
@@ -57,7 +56,7 @@ if rank == 0:
 
         summ = 0
         mean_dev = 0
-        prob = [1/36, 2/36, 3/36, 4/36, 5/36, 6/36, 5/36, 4/36, 3/36, 2/36, 1/36]
+        prob = [1/36, 2/36, 3/36, 4/36, 5/36, 6/36, 5/36, 4/36, 3/36, 2/36, 1/36] #List with the probabilities of each sum
         for i in range(dice().min, dice().max+1):
             #print(sum(AUX[j] for j in AUX))
             exp = (prob[i-2])*(sum(AUX[j] for j in AUX))
@@ -83,7 +82,7 @@ if rank == 0:
         
         else:
             run += 1
-            npp = 2*npp
+            npp = 2*npp #Doubling the number of events if the mean deviation condition is not met
             for p in range(1, size):
                 #print("Run order sent to process ", p)
                 comm.send(npp, dest = p, tag=11)
@@ -95,14 +94,14 @@ if rank == 0:
     print("The elapsed time is {} seconds, corresponding to the max ET of all processes.".format(max(wtime)))
         
 else:
-    while flag==0:
+    while flag==0: #Flag 0 means the loop continues
         n = comm.recv(source = 0, tag=11)
         if n!=0:
             S = simulation(n, sides, n_dice)
             comm.send(S, dest = 0, tag=0) #Sends data to rank 0 process
 
         else:
-            flag = 1
+            flag = 1 #Flag 1 is the stop order
             print("Stop flag received -> Terminated (Process {})".format(rank))
             comm.send(None, dest = 0, tag = 0)
             
@@ -114,13 +113,3 @@ else:
 
 comm.Barrier() #Guarantees that all the processes are synchronized at this step so the following print is last in order
 if rank==0:print("="*50 + " Exercise 4.1 (Parallelized Execution) " + "="*50)
-
-"""
-
-After 5 runs, the average time of execution for 10e6 events and 4 paralell processes,
-is 15 seconds for the epoch related time and 14 seconds for the CPU/system usage time.
-
-It is a clear improvement over the single core performance script, has it reduces, on average,
-the time by 60%.
-
-"""

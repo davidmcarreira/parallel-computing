@@ -7,10 +7,9 @@ import matplotlib.pyplot as plt
 from mpi4py import MPI
 from cmath import sqrt
 
-start = time.time() #Samples clock (returns time since epoch) at this time
-start_cpu = time.process_time() #Samples clock (system and CPU usage time) at this time
 
 comm = MPI.COMM_WORLD #Communicator to handle point-to-point communication
+start = MPI.Wtime() #MPI Wall time
 rank = comm.Get_rank() #Hierarchy of processes
 size = comm.Get_size() #Number of processes
 
@@ -21,6 +20,8 @@ pi_real = 3.141592
 x = [] #List with the x coordinates of the random points
 y = [] #List with the y coordinates of the random points
 r = 1 #Radius
+
+max_time = [] #Metadata list to store the time in each process
 
 count = dict(inside = 0, out = 0) #Dictionary to help count the points 
                                   #inside the circle and outside the circle
@@ -48,12 +49,13 @@ for j in range(0, len(x)): #for loop to check if a point is inside the circle
 #-------------------- Parallelization portion of the code --------------------#
 if rank == 0:
     for p in range(1, size): #for loop to call each process p
-        x_proc = comm.recv(source = p, tag = 1) #Points x coordinates
-        y_proc = comm.recv(source = p, tag = 2) #Points y coordinates
         count_proc = comm.recv(source = p, tag = 3) #Dictionary that counts the points inside and outside the circle
 
         count['inside'] += count_proc['inside'] #Adds the new values to the dictionary key that counts the points inside the circle
         count['out'] += count_proc['out'] #Adds the new values to the dictionary key that counts the points outside the circle
+
+        process_time = comm.recv(source = p, tag = 1)
+        max_time.append(process_time)
 
     z_c = 1 #Critical value
     pi = 4*(count['inside'] / n) #pi approximation formula
@@ -69,19 +71,22 @@ if rank == 0:
     #plt.gca().add_patch(circle1) #Drawing the circle (patch) in the plot at the current axis configuration
                                   #gca() => Get Current Axis
 
-    end = time.time() #Samples clock again
-    end_cpu = time.process_time() #same thing bit for system and CPU
-    et = end - start #Calculates the difference between time samples (epoch related)
-    et_cpu = end_cpu - start_cpu #Calculates the difference but for the time spent on system and CPU
+    end_master = MPI.Wtime()
+    et_master = end_master - start
+    max_time.append(et_master)
+    print("Process {} took {} seconds.".format(rank, et_master))
 
-    print("\nFor {} events the execution time is {} seconds and the CPU execution time is {} seconds".format(n, et, et_cpu))
+    print("\nFor {} events the execution time is {} seconds.".format(n, max(i for i in max_time)))
 
     #plt.show() #Shows the plot after everything intended is included in the figure
 else:
     #Communicators responsible for sending the generated/calculated data to the "master" process (rank 0)
-    comm.send(x, dest = 0, tag = 1)
-    comm.send(y, dest = 0, tag = 2)
     comm.send(count, dest = 0, tag = 3)
+
+    end_slave = MPI.Wtime()
+    et_slave = end_slave - start
+    comm.send(et_slave, dest = 0, tag = 1)
+    print("Process {} took {} seconds.".format(rank, et_slave))
 
 
 """
@@ -91,13 +96,11 @@ are commented. Therefore, without graphics, the results are as follows:
 
 -> Using 4 processes
 
-- For 10^8 points there are 78540345 points inside and 21459655 outside.
+- For 10^8 points there are 78541966 points inside and 21458034 outside.
 
-- The approximate value of pi is 3.141503 and the real value is 3.141592, the delta_r is 0.000164 and the delta_pi is 0.000089 
+- The approximate value of pi is 3.141679 and the real value is 3.141592, the delta_r is 0.000164 and the delta_pi is 0.000087 
 for a critical value Z_c of 1. 
 
-- For 10^8 events the execution time is 106.49144983291626 seconds and the CPU execution time is 103.981949305 seconds. This means that
-there is a reduction of exectuion time of,approximately, 69 seconds, resulting in an improvemnt of 60.8% when compared to single core performace!
-
-Note: This is basically the same percentage as the "Dice Rolling" task.
+- For 10^8 events the execution time is 94.100734174 seconds. This means that there is a reduction of execution time of, approximately,
+68 seconds, resulting in an improvement of ~42% when compared to single core performace!
 """
