@@ -1,6 +1,7 @@
 import numpy as np
 from mpi4py import MPI
 import sys
+from cmath import sqrt
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -9,13 +10,13 @@ size = comm.Get_size()
 np.set_printoptions(linewidth=200)
 np.set_printoptions(suppress=True)
 
-n = 8 #Number of lines and/or columns
+n = 3 #Number of lines and/or columns
 lpp = n // size #Columns per process
 
 if rank == 0:
-    A = np.array(np.random.randint(10, 20, size = (n, n+1)), dtype='float')
+    #A = np.array(np.random.randint(10, 20, size = (n, n)), dtype='float')
     #A = np.array([[2, 2, 1, 1, 5], [1, -3, 2, 3, 2], [-1, 1, -1, -1, -1], [1, -1, 1, 2, 2]], dtype = 'float')   
-
+    A = np.array([[-sqrt(2).real, 2, 0, 1], [1, -sqrt(2).real, 1, 1], [0, 2, -sqrt(2).real, 1]], dtype = 'float64')
     print("\nStep 1 Matrix A:\n{}".format(A[:, :n]))
     print("Step 1 Matrix b:\n{}\n".format(A[:, n]))
 else:
@@ -40,6 +41,7 @@ while m < n:
                 count = np.hstack([count, recvbuf_supp[i].shape[0]*recvbuf_supp[i].shape[1]])
         displ = [sum(count[:p]) for p in range(size)] # It's the displacement array, i.e, stores the index where the block of data starts in each process
         displ = np.array(displ)
+ 
 
         for p in range(size):
             comm.send(recvbuf_supp[p].shape[0], dest = p, tag = 1) #Number of lines per process of new array (non divisible by # of processes)
@@ -59,7 +61,6 @@ while m < n:
     comm.Bcast(prev_line, root = 0)
     comm.Bcast(count, root = 0)
     comm.Scatterv([sendbuf, count, displ, MPI.DOUBLE], new_recvbuf, root = 0)
-    #print(new_recvbuf, rank, m, new_recvbuf.shape)
 
     if rank == 0:
         for j in range(1, vpp): #Lines
@@ -78,9 +79,7 @@ while m < n:
                 new_recvbuf[j][k] = new_recvbuf[j][k] - ratio * prev_line[k]
 
     #print("Step {} Rank {}: Results: \n{}".format(m, rank, new_recvbuf))
-    # print(count-1, sum(count-1)//n) #Needs to be divided by number 
-    # print(n-m)
-    new_A = np.empty([n-m, n+1], dtype = 'float') #The number of lines of the new_A always reduces by one (pivot line that's broadcasted)
+    new_A = np.empty([sum(count-1)//n, n+1], dtype = 'float')
     comm.Gatherv(new_recvbuf, [new_A, count, displ, MPI.DOUBLE], root = 0)
     #if rank == 0: print("Step {}: New A: \n{}\n".format(m, new_A))   
     

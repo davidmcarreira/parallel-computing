@@ -9,12 +9,12 @@ size = comm.Get_size()
 np.set_printoptions(linewidth=200)
 np.set_printoptions(suppress=True)
 
-n = 4 #Number of lines and/or columns
+n = 16 #Number of lines and/or columns
 lpp = n // size #Columns per process
 
 if rank == 0:
-    #A = np.array(np.random.randint(10, 20, size = (n, n)), dtype='float')
-    A = np.array([[2, 2, 1, 1, 5], [1, -3, 2, 3, 2], [-1, 1, -1, -1, -1], [1, -1, 1, 2, 2]], dtype = 'float')
+    A = np.array(np.random.randint(10, 20, size = (n, n+1)), dtype='float')
+    #A = np.array([[2, 2, 1, 1, 5], [1, -3, 2, 3, 2], [-1, 1, -1, -1, -1], [1, -1, 1, 2, 2]], dtype = 'float')
     
     prev_line = A[0]
 
