@@ -1,14 +1,35 @@
-"""
-
-Isto é a falha que implica a comutação parcial?
-/storage/Ubuntu/UC/CP/Exercises/Ex7/ex1.py:80: RuntimeWarning: invalid value encountered in double_scalars
-  new_recvbuf[j][k] = new_recvbuf[j][k] - ratio * prev_line[k]
-
-"""
-
 import numpy as np
 from mpi4py import MPI
-from sys import argv
+import sys
+import os
+
+def elim_gauss(vpp, prev_line, new_recvbuf):
+    if rank == 0: # Rank 0 needs to be separated because the first line is special, since it's used for calculating the ratio variable
+                  # and this is always the rank that receives the first information
+        for j in range(1, vpp): #Lines
+            if prev_line[m] == 0: #Handles the cases where a 0 is in the diagonal, so it will be used in the denominator of the ratio
+                print("\nRank {}:There's a zero on the diagonal, therefore, the determinant is zero \nand the condition of linear independence for all equations is broken.".format(rank))
+                sys.exit()
+
+            else:
+                ratio = new_recvbuf[j][m]/prev_line[m]
+                
+            for k in range(n+1): #Columns
+                new_recvbuf[j][k] = new_recvbuf[j][k] - ratio * prev_line[k]
+    else:
+        for j in range(vpp): #Lines
+            if prev_line[m] == 0: #Handles the cases where a 0 is in the diagonal, so it will be used in the denominator of the ratio
+                print("\nRank {}:There's a zero on the diagonal, therefore, the determinant is zero \nand the condition of linear independence for all equations is broken.".format(rank))
+                sys.exit()
+            else:
+                ratio = new_recvbuf[j][m]/prev_line[m]
+                
+            for k in range(n+1): #Columns
+                new_recvbuf[j][k] = new_recvbuf[j][k] - ratio * prev_line[k]
+
+    return new_recvbuf
+
+
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -17,10 +38,10 @@ size = comm.Get_size()
 np.set_printoptions(linewidth=200)
 np.set_printoptions(suppress=True)
 
-n = int(argv[1]) #Number of lines and/or columns
+n = int(sys.argv[1]) #Number of lines and/or columns
 
 if rank == 0:
-    Ab = np.array(np.random.randint(10, 20, size = (n, n+1)), dtype='float')
+    Ab = np.array(np.random.randint(1, 10, size = (n, n+1)), dtype='float')
     #A = np.array([[2, 2, 1, 1, 5], [1, -3, 2, 3, 2], [-1, 1, -1, -1, -1], [1, -1, 1, 2, 2]], dtype = 'float')   
 
     unmod_Ab = np.copy(Ab)  # Although the first iteration is equal, A will be modified throughout the process, therefore, the matrix to be Scattered
@@ -37,29 +58,29 @@ else:
     Ab = None
 
 m = 0
-while m < n:
-    if rank == 0:
+while m < n: # Cycle that performs the m step calculations
+    if rank == 0: # Master rank that will distribute all the necessary parts over the processes
         if m!= 0:
-            Ab[m-1:, :] = new_Ab
+            Ab[m-1:, :] = new_Ab #Updating the initial matrix
             print("\nStep {} Matrix A:\n{}".format(m+1, Ab[:, :n]))
             print("Step {} Matrix b:\n{}\n".format(m+1, Ab[:, n]))
 
-        if m<n-1:
+        if m<n-1: # Determining the new line that needs to be preserved to calculate the ratio
             prev_line = Ab[m]
 
-        recvbuf_supp = np.array_split(Ab[m:, :], size)
+        recvbuf_supp = np.array_split(Ab[m:, :], size) # Support array that stores the array split in unequal (when needed) or equal parts 
         for i in range(len(recvbuf_supp)): # Using len(recvbuf_supp) (which is the same as the number of processes) for better comprehension
             if i == 0:
-                count = recvbuf_supp[0].shape[0]*recvbuf_supp[0].shape[1]
+                count = recvbuf_supp[0].shape[0]*recvbuf_supp[0].shape[1] # Count is equal to the line of the array multiplied by the column 
             else:
                 count = np.hstack([count, recvbuf_supp[i].shape[0]*recvbuf_supp[i].shape[1]])
         displ = [sum(count[:p]) for p in range(size)] # It's the displacement array, i.e, stores the index where the block of data starts in each process
         displ = np.array(displ)
 
         for p in range(size):
-            comm.send(recvbuf_supp[p].shape[0], dest = p, tag = 1) #Number of lines per process of new array (non divisible by # of processes)
+            comm.send(recvbuf_supp[p].shape[0], dest = p, tag = 1) # Number of lines per process of new array (non divisible by # of processes)
 
-        sendbuf = Ab[m:, :]
+        sendbuf = Ab[m:, :] # Data to be Scattered over the processes
 
     else:
         count = np.empty(size, dtype='int')
@@ -67,51 +88,36 @@ while m < n:
         displ = None
         sendbuf = None
 
-    if m == n-1: break #Because the matrix A is delayed one index, there's an extra step m, but the process needs to be stoped at m == n-1
+    if m == n-1: break # Because the matrix A is delayed one index, there's an extra step m, but the process needs to be stoped at m == n-1
 
-    vpp = comm.recv(source = 0, tag = 1)
-    new_recvbuf = np.empty([vpp, n+1], dtype = 'float')
-    comm.Bcast(prev_line, root = 0)
-    comm.Bcast(count, root = 0)
-    comm.Scatterv([sendbuf, count, displ, MPI.DOUBLE], new_recvbuf, root = 0)
-    #print(new_recvbuf, rank, m, new_recvbuf.shape)
+    vpp = comm.recv(source = 0, tag = 1) # Value that corresponds to the number of lines per process of new array (non divisible by # of processes)
+    new_recvbuf = np.empty([vpp, n+1], dtype = 'float') # Buffer that receives the data is created depending on the number of the received elements (since the number of data might not be divisible by the # of processes)
+    comm.Bcast(prev_line, root = 0) # Sending the new line to all the processes (since all of them need it to calcualte ratio)
+    comm.Bcast(count, root = 0) # Updating the count value on all proceses
+    comm.Scatterv([sendbuf, count, displ, MPI.DOUBLE], new_recvbuf, root = 0) # Scattering only the needed data
 
-    if rank == 0:
-        for j in range(1, vpp): #Lines
-            if prev_line[m] == 0:
-                ratio = new_recvbuf[j][m]/prev_line[m+1] #Ratio needs the line from the step m
-            else:
-                ratio = new_recvbuf[j][m]/prev_line[m]
-            
-            for k in range(n+1): #Columns
-                new_recvbuf[j][k] = new_recvbuf[j][k] - ratio * prev_line[k]
-    else:
-        for j in range(vpp): #Lines
-            ratio = new_recvbuf[j][m]/prev_line[m]
-            
-            for k in range(n+1): #Columns
-                new_recvbuf[j][k] = new_recvbuf[j][k] - ratio * prev_line[k]
+    
+    #Gauss-Jordan Elimination Method
+    new_recvbuf = elim_gauss(vpp, prev_line, new_recvbuf) 
+
 
     #print("Step {} Rank {}: Results: \n{}".format(m, rank, new_recvbuf))
-    # print(count-1, sum(count-1)//n) #Needs to be divided by number 
-    # print(n-m)
-    new_Ab = np.empty([n-m, n+1], dtype = 'float') #The number of lines of the new_A always reduces by one (pivot line that's broadcasted)
-    comm.Gatherv(new_recvbuf, [new_Ab, count, displ, MPI.DOUBLE], root = 0)
-    #if rank == 0: print("Step {}: New A: \n{}\n".format(m, new_A))   
+    new_Ab = np.empty([n-m, n+1], dtype = 'float') # The number of lines of the new_A always reduces by one (pivot line that's broadcasted)
+    comm.Gatherv(new_recvbuf, [new_Ab, count, displ, MPI.DOUBLE], root = 0) # Gather the results  
     
     m += 1
 
+#Backward Substitution
 if rank == 0:
-    # Backward Substitution
-    a = np.array(Ab[:, :n])
-    b = np.array(Ab[:, n])
-    # print("This is b", b, rank)
-    # print("This is a", a, rank)
-    x = np.zeros_like(b)
+    # Because all the calculations were performed with the matrix in expanded mode, now it needs to be separated
+    a = np.array(Ab[:, :n]) # The matrix A is all the rows and all the columns until n-1 (the slicing excludes the uppermost limit)
+    b = np.array(Ab[:, n]) # The matrix b is all the rows but only the column n
+    x = np.zeros_like(b) # Line array to be filled with the solutions
+    x_str = ""
     for i in range(n - 1, -1, -1):
         x[i] = (b[i] - sum(a[i][j] * x[j] for j in range(i + 1, n))) / a[i][i]
-
-    print("The final solution is: \nx1: {} \nx2: {} \nx3: {}".format(x[0], x[1], x[2]))
+        x_str = x_str + "\n====> x" + str(i+1) + ": " + str(x[i])
+    print("The final solution is: " + x_str)
 
 """"
 
