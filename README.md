@@ -1,4 +1,4 @@
-# Parallel Computing Exercises for the Advanced Computing Course
+# Parallel Computing Exercises for the Advanced Computing Course (University of  Coimbra)
 
 ## Table of Contents
 - [Ex1 - Sum of n rolls of m sided p dice](https://github.com/davidmcarreira/parallel-computing/tree/main/Ex1)
@@ -21,3 +21,7 @@
     - Ex7.1 - Without pivoting
     - Ex7.2 - With partial pivoting (rows wise)
 - [Ex8 - Ranksort Algorithm](https://github.com/davidmcarreira/parallel-computing/tree/main/Ex8)
+
+
+#
+Each folder includes the exercise description.
