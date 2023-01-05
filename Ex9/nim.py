@@ -32,39 +32,39 @@ nr_games = int(nr_games)
 
 Stat={}
 for i in range(1,maxpos+1):
-  Stat[i] = {}
-  for j in range(1,min(i,3)+1):
-    Stat[i][j] = 0
+	Stat[i] = {}
+	for j in range(1,min(i,3)+1):
+		Stat[i][j] = 0
 
 for g in range(nr_games):
   # moves[player][pos]:
   #   for player 1 and 2:
   #     for each position this player went through:
   #        number of peaces taken at position
-  moves = {}
-  moves[1] = {}
-  moves[2] = {}
-  # start position, player 1 is starting
-  pos = maxpos
-  player = 0
-  # perform one game:
-  while pos:
-    # switch to other player
-    player = 2 if player == 1 else 1
+	moves = {}
+	moves[1] = {}
+	moves[2] = {}
+	# start position, player 1 is starting
+	pos = maxpos
+	player = 0
+	# perform one game:
+	while pos:
+    	# switch to other player
+		player = 2 if player == 1 else 1
 
-    # get best move for this position so far:
-    #   key of highest value in Stat[pos])
-    move = max(Stat[pos], key=Stat[pos].get)
-    moves[player][pos] = move
-    pos -= move
+		# get best move for this position so far:
+		#   key of highest value in Stat[pos])
+		move = max(Stat[pos], key=Stat[pos].get)
+		moves[player][pos] = move
+		pos -= move
 
-  # last player wins, collect statistics:  
-  for pos in moves[player]:
-    Stat[pos][moves[player][pos]]+= 1
-  # switch to other player that lost:
-  player = 2 if player == 1 else 1
-  for pos in moves[player]:
-    Stat[pos][moves[player][pos]] -= 1
+	# last player wins, collect statistics:  
+	for pos in moves[player]:
+		Stat[pos][moves[player][pos]]+= 1
+	# switch to other player that lost:
+	player = 2 if player == 1 else 1
+	for pos in moves[player]:
+		Stat[pos][moves[player][pos]] -= 1
 
 # Detect best move for all positions and print statistics:
 for i in range(maxpos, 0, -1):
