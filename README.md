@@ -21,6 +21,11 @@
     - Ex7.1 - Without pivoting
     - Ex7.2 - With partial pivoting (rows wise)
 - [Ex8 - Ranksort Algorithm](https://github.com/davidmcarreira/parallel-computing/tree/main/Ex8)
+- [Ex9 - NIM Game (Machine Learning)](https://github.com/davidmcarreira/parallel-computing/tree/main/Ex9)
+    - Ex9.1 - Analyse learned weights for different training intervals
+    - Ex9.2 - Change method of choosing best move
+    - Ex9.3 - Implement classic NIM game and analyse
+    - Ex9.4 - Is it possible to parallelize the classic NIM game?
 
 
 #
